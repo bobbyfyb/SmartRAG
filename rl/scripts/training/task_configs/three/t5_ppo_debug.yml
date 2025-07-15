@@ -1,5 +1,5 @@
 tokenizer:
-  model_name: flan-t5-base-warm-up/checkpoint-9000
+  model_name: ckpt/flan-t5-large-warm-up-v2/checkpoint-13000
   padding_side: left
   truncation_side: left
   pad_token_as_eos_token: False
@@ -32,10 +32,11 @@ alg:
   model_type: seq2seq 
   args: 
     n_steps: 512 # 256 # 32
-    batch_size: 32 # 
+    batch_size: 4 #
+    gradient_accumulation_steps: 8
     verbose: 1
     learning_rate: 0.000002
-    n_epochs: 2 # 4 # 2
+    n_epochs: 1 # 4 # 2
     ent_coef: 0.0
   kl_div:
     coeff: 0.001
@@ -43,7 +44,7 @@ alg:
   policy:
     id: seq2seq_lm_actor_critic_policy
     args:
-      model_name: /flan-t5-base-warm-up-v6/checkpoint-9000
+      model_name: ckpt/flan-t5-large-warm-up-v2/checkpoint-13000
       apply_model_parallel: True 
       prompt_truncation_side: "right"
       generation_kwargs:

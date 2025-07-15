@@ -149,7 +149,7 @@ class Seq2SeqLMActorCriticPolicy(LMActorCriticPolicy, ActorCriticWarmStartMixin)
             if isinstance(v, torch.Tensor):
                 assert not torch.isnan(v).any(),f"NaN in obs[{k}]"
         
-        print(f"fyb --- decoder_attention_mask in policy model_inputs: {model_inputs.decoder_attention_mask}")
+        print(f"fyb --- decoder_attention_mask in policy model_inputs: {model_inputs['decoder_attention_mask']}")
         
         # and forward pass to get next token logits
         # outputs = self._policy_model(
@@ -230,7 +230,7 @@ class Seq2SeqLMActorCriticPolicy(LMActorCriticPolicy, ActorCriticWarmStartMixin)
             input_ids, **past_model_kwargs
         )
 
-        print(f"fyb --- decoder_attention_mask in value model_inputs: {model_inputs.decoder_attention_mask}")
+        print(f"fyb --- decoder_attention_mask in value model_inputs: {model_inputs['decoder_attention_mask']}")
         
         # and forrward pass to get hidden states
         # outputs = self._value_model(
@@ -328,7 +328,7 @@ class Seq2SeqLMActorCriticPolicy(LMActorCriticPolicy, ActorCriticWarmStartMixin)
             input_ids, **past_model_kwargs
         )
         
-        print(f"fyb --- decoder_attention_mask in ref model_inputs: {model_inputs.decoder_attention_mask}")
+        print(f"fyb --- decoder_attention_mask in ref model_inputs: {model_inputs['decoder_attention_mask']}")
         
 
         # and forward pass to get next token logits
