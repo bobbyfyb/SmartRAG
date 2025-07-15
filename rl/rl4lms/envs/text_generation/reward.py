@@ -1,7 +1,8 @@
 from abc import ABC, abstractclassmethod
 import string
 import torch
-from datasets import load_metric
+# from datasets import load_metric
+import evaluate
 from rl4lms.envs.text_generation.observation import Observation
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from rl4lms.envs.text_generation.metric import (
@@ -377,7 +378,7 @@ class RougeRewardFunction(RewardFunction):
         self, rouge_type: str, shaping_fn: str = None, use_single_ref: bool = True
     ) -> None:
         super().__init__()
-        self._metric = load_metric("rouge")
+        self._metric = evaluate.load("rouge")
         self._rouge_type = rouge_type
         from rl4lms.envs.text_generation.registry import RewardFunctionRegistry
 
@@ -622,7 +623,7 @@ class mmluRewardFunction(RewardFunction):
 class RougeCombined(RewardFunction):
     def __init__(self, shaping_fn: str = None) -> None:
         super().__init__()
-        self._metric = load_metric("rouge")
+        self._metric = evaluate.load("rouge")
         from rl4lms.envs.text_generation.registry import RewardFunctionRegistry
 
         self._shaping_fn = (
@@ -709,7 +710,7 @@ class BLEURewardFunction(RewardFunction):
 class SacreBleu(RewardFunction):
     def __init__(self, **args) -> None:
         super().__init__()
-        self._metric = load_metric("sacrebleu")
+        self._metric = evaluate.load("sacrebleu")
         self._args = args
 
     def __call__(
@@ -848,7 +849,7 @@ class LearnedRewardFunction(RewardFunction):
 # class BLEURTRewardFunction(RewardFunction):
 #     def __init__(self, checkpoint: str = None):
 #         super().__init__()
-#         self._metric = load_metric("bleurt", checkpoint=checkpoint)
+#         self._metric = evaluate.load("bleurt", checkpoint=checkpoint)
 
 #     def __call__(
 #         self,

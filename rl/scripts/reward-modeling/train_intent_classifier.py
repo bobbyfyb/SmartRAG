@@ -1,5 +1,6 @@
 from transformers import TrainingArguments, Trainer, DataCollatorWithPadding
-from datasets import load_dataset, load_metric
+from datasets import load_dataset
+import evaluate
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import numpy as np
 from rl4lms.data_pools.custom_text_generation_pools import DailyDialog
@@ -61,7 +62,8 @@ def main():
     tokenized_ds_test = ds_test.map(tokenize, batched=True)
 
     def compute_metrics(eval_preds):
-        metric = load_metric("accuracy")
+        # metric = load_metric("accuracy")
+        metric = evaluate.load("accuracy")
         logits, labels = eval_preds
         predictions = np.argmax(logits, axis=-1)
         return metric.compute(predictions=predictions, references=labels)

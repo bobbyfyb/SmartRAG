@@ -99,9 +99,9 @@ class three(TextGenPool):
 
         split_ = split
         split = popqa.gen_split_name(split_)
-        if split == "train":
-            split = "train_retrieval"
-        infile = f'RL4LMs/datasets/tasks/three/{split}.json'
+        # if split == "train":
+        #     split = "train_retrieval"
+        infile = f'rl/datasets/tasks/three/{split}.json'
         if infile.split(".")[-1] == 'jsonl':
             lines = open(infile, 'r', encoding='utf8').readlines()
             lines = [json.loads(l) for l in lines] 
