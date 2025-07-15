@@ -1,0 +1,13 @@
+*/__pycache__/*
+wandb
+*.pyc
+rl4lm_exps
+__MACOSX__
+*.pt
+*.pth
+.DS_Store
+checkpoint-*
+*.egg-info
+logs
+results
+ckpt
