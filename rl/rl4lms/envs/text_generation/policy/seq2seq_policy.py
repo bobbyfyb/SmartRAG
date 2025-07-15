@@ -99,6 +99,13 @@ class Seq2SeqLMActorCriticPolicy(LMActorCriticPolicy, ActorCriticWarmStartMixin)
         actions: torch.tensor,
         past_model_kwargs: Optional[Dict[str, torch.tensor]] = None,
     ) -> PolicyOutput:
+        
+        # check if obs contains NaN
+        for k in obs.keys():
+            v = obs[k]
+            if isinstance(v, torch.Tensor):
+                assert not torch.isnan(v).any(), f"NaN in obs[{k}]"
+                assert not torch.isinf(v).any(), f"Inf in obs[{k}]"
 
         # Temp workaround for Seq2seq policy
         past_model_kwargs = None
@@ -136,6 +143,14 @@ class Seq2SeqLMActorCriticPolicy(LMActorCriticPolicy, ActorCriticWarmStartMixin)
             input_ids, **past_model_kwargs
         )
 
+        # check if model_inputs contains NaN
+        for k in model_inputs.keys():
+            v = model_inputs[k]
+            if isinstance(v, torch.Tensor):
+                assert not torch.isnan(v).any(),f"NaN in obs[{k}]"
+        
+        print(f"fyb --- decoder_attention_mask in policy model_inputs: {model_inputs.decoder_attention_mask}")
+        
         # and forward pass to get next token logits
         # outputs = self._policy_model(
         #     **model_inputs, decoder_attention_mask=decoder_attn_mask, return_dict=True
@@ -143,6 +158,10 @@ class Seq2SeqLMActorCriticPolicy(LMActorCriticPolicy, ActorCriticWarmStartMixin)
         outputs = self._policy_model(
             **model_inputs, return_dict=True
         )
+        
+        # check if outputs.logits contains NaN
+        assert not torch.isnan(outputs.logits).any(), "NaN in model outputs.logits"
+        
         next_token_logits = outputs.logits[:, -1, :]
 
         # get log probs
@@ -211,6 +230,8 @@ class Seq2SeqLMActorCriticPolicy(LMActorCriticPolicy, ActorCriticWarmStartMixin)
             input_ids, **past_model_kwargs
         )
 
+        print(f"fyb --- decoder_attention_mask in value model_inputs: {model_inputs.decoder_attention_mask}")
+        
         # and forrward pass to get hidden states
         # outputs = self._value_model(
         #     **model_inputs,
@@ -306,6 +327,9 @@ class Seq2SeqLMActorCriticPolicy(LMActorCriticPolicy, ActorCriticWarmStartMixin)
         model_inputs = unwrap_model(self._ref_model).prepare_inputs_for_generation(
             input_ids, **past_model_kwargs
         )
+        
+        print(f"fyb --- decoder_attention_mask in ref model_inputs: {model_inputs.decoder_attention_mask}")
+        
 
         # and forward pass to get next token logits
         # outputs = self._ref_model(
