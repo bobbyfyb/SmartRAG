@@ -1,5 +1,5 @@
 tokenizer:
-  model_name: flan-t5-large-warm-up/checkpoint-17500
+  model_name: ckpt/flan-t5-large-warm-up-v2/checkpoint-13000
   padding_side: left
   truncation_side: left
   pad_token_as_eos_token: False
@@ -45,7 +45,7 @@ alg:
   policy:
     id: seq2seq_lm_actor_critic_policy
     args:
-      model_name: flan-t5-large-warm-up-60000/checkpoint-17500
+      model_name: ckpt/flan-t5-large-warm-up-v2/checkpoint-13000
       apply_model_parallel: True 
       
       prompt_truncation_side: "right"

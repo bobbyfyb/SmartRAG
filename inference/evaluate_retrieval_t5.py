@@ -149,7 +149,7 @@ def load_model_tokenizer_for_inference(model_path):
 
 def generate_response(prompt_text, model, tokenizer, max_length=150, num_return_sequences=1):
     model.eval()
-
+    
     tokenized_input = tokenizer(prompt_text, return_tensors="pt")
 
     summary_ids = model.generate(
@@ -160,7 +160,7 @@ def generate_response(prompt_text, model, tokenizer, max_length=150, num_return_
         early_stopping=True,
         num_return_sequences=num_return_sequences,
         )
-
+    
     responses = []
     for response_id in summary_ids :
         response = tokenizer.decode(response_id)
@@ -202,7 +202,7 @@ def generate_response_with_prob(prompt_text, model, tokenizer, thres_hold, max_l
         early_stopping=True,
         num_return_sequences=num_return_sequences,
     )
-
+        
     responses = []
     for response_id in summary_ids:
         response = tokenizer.decode(response_id, skip_special_tokens=True)
@@ -284,17 +284,17 @@ if __name__ == "__main__":
     base_model_path = args.base_model_path
     print(base_model_path)
     if args.dataset == "popqa":
-        test_data_path = "SmartRAG/datasets/tasks/popqa/test.jsonl"
+        test_data_path = "SmartRAG/rl/datasets/tasks/popqa/test.jsonl"
         args.save_evaluate_path += "popqa_"
         test_data = load_jsonl(test_data_path)
 
     elif args.dataset == "ambignq":
-        test_data_path = "SmartRAG/datasets/tasks/ambignq/dev.jsonl"
+        test_data_path = "rl/datasets/tasks/ambignq/test.jsonl"
         args.save_evaluate_path += "ambigqa_"
         test_data = load_jsonl(test_data_path)
 
     elif args.dataset == "hotpotqa":
-        test_data_path = "SmartRAG/datasets/tasks/hotpotqa/hotpot_dev_v1_simplified.json"
+        test_data_path = "SmartRAG/rl/datasets/tasks/hotpotqa/hotpot_dev_v1_simplified.json"
         args.save_evaluate_path += "hotpotqa_"
         test_data = load_json(test_data_path)
     else:
@@ -307,7 +307,7 @@ if __name__ == "__main__":
     args.save_evaluate_path += str(args.threshold)
     args.save_evaluate_path += "_"
     
-    model, tokenizer = load_model_tokenizer_for_inference(base_model_path)
+    model, tokenizer = load_model_tokenizer_for_inference(base_model_path)     
     model.cuda()
     if args.checkpoint:
         checkpoint = torch.load(args.checkpoint, map_location="cuda:0")
@@ -322,11 +322,25 @@ if __name__ == "__main__":
     target_save_list = []
     hit_num = 0 
     no_hit_num = 0 
+    infer_res_list = []
     for single_data in tqdm(test_data):
+        
+        infer_res = {
+            "input_question_prompt": None,
+            "golden_answers": None,
+            "decision": None,
+            "generated_query": None,
+            "input_with_retrieval_prompt":None,
+            "retrieval_result": None,
+            "generated_answer": None
+        }
 
         temp_data = copy.deepcopy(single_data)
         question_input = ORIGIN_INSTRUCTION.format(input=temp_data["question"])
         answers = temp_data["answer"]
+        
+        infer_res["input_question_prompt"] = question_input
+        infer_res["golden_answers"] = answers
 
         model.generation_config.decoder_start_token_id = 0
 
@@ -336,14 +350,23 @@ if __name__ == "__main__":
             predict_list.append(predicted)
             answers_list.append(answers)
             temp_data["predict"] = predicted
+            
+            infer_res["decision"] = '[ANSWER]'
+            infer_res["generated_query"] = None
+            infer_res["retrieval_result"] = None
+            infer_res["generated_answer"] = predicted
 
         elif first_token == 32100:
             try:
                 retrieve_text, search_time = bing(predicted)
             except:
-                retrieve_text = ""
+                retrieve_text = ""           
             temp_data["Search"] = predicted
             temp_data["retrieve_text"] = retrieve_text
+
+            infer_res["decision"] = '[SEARCH]'
+            infer_res["generated_query"] = predicted
+            infer_res["retrieval_result"] = retrieve_text
 
             if hits(answers, retrieve_text, dn=0, dl=False) != 0:
                 hit_num += 1
@@ -352,18 +375,27 @@ if __name__ == "__main__":
 
             retrival_input = RETRIEVAL_INSTRUCTION.format(input=temp_data["question"], search=retrieve_text)
 
+            infer_res["input_with_retrieval_prompt"] = retrival_input          
             model.generation_config.decoder_start_token_id = 0 
             predicted = generate_response(retrival_input, model, tokenizer)
             answer_query, remaining_sentence = get_first_word_and_remaining(predicted)
-
+ 
             temp_data["predict"] = predicted
             predict_list.append(remaining_sentence)
             answers_list.append(answers)
+            
+            infer_res["generated_answer"] = remaining_sentence
 
         else:
             print("format error")
             print(predicted)
             temp_data["predict"] = "format error"
+            
+            infer_res["decision"] = "format error"
+            infer_res["generated_answer"] = predicted
+        
+        infer_res_list.append(infer_res)
+            
         target_save_list.append(temp_data)
 
     accuracy = round(accuracy_list_total(predict_list, answers_list), 3)
@@ -378,3 +410,6 @@ if __name__ == "__main__":
     print("no_hit_num is: ", no_hit_num)
 
     save_json(target_save_list, args.save_evaluate_path)
+
+    with open(f"{args.save_evaluate_path}_infer_res.json", 'w') as file:
+        json.dump(infer_res_list, file, indent=4)
